@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
-# [0.5.1]() (Upcoming)
+# [0.6.0]() (Upcoming)
 
 ### Bug Fixes
 
@@ -11,12 +11,12 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 ### Features
 
-* 
+* Add release information for version 0.8.30 [#36](https://github.com/LFDT-web3j/web3j-sokt/pull/36)
 * Bump snapshot version to 0.5.1 [#35](https://github.com/hyperledger/web3j-sokt/pull/35)
 
 ### BREAKING CHANGES
 
-* NIL
+* Update maven repo [#37](https://github.com/LFDT-web3j/web3j-sokt/pull/37)
 
 # [0.5.0](https://github.com/LFDT-web3j/web3j-sokt/releases/tag/v0.5.0) (2025-04-09)
 
