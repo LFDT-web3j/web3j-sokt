@@ -472,5 +472,11 @@
     "windows_url": "https://github.com/ethereum/solidity/releases/download/v0.8.29/solc-windows.exe",
     "mac_url": "https://github.com/ethereum/solidity/releases/download/v0.8.29/solc-macos",
     "linux_url": "https://github.com/ethereum/solidity/releases/download/v0.8.29/solc-static-linux"
+  },
+  {
+    "version": "0.8.30",
+    "windows_url": "https://github.com/ethereum/solidity/releases/download/v0.8.30/solc-windows.exe",
+    "mac_url": "https://github.com/ethereum/solidity/releases/download/v0.8.30/solc-macos",
+    "linux_url": "https://github.com/ethereum/solidity/releases/download/v0.8.30/solc-static-linux"
   }
 ]
