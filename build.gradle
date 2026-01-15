@@ -10,12 +10,14 @@ buildscript {
 plugins {
     id 'idea'
     id 'jacoco'
+    id 'maven-publish'
     id "com.diffplug.spotless" version "6.25.0"
     id 'io.codearte.nexus-staging' version '0.30.0'
-    id "de.marcphilipp.nexus-publish" version "0.4.0"
+    id 'io.github.gradle-nexus.publish-plugin' version '2.0.0'
     id 'org.jetbrains.kotlin.jvm' version "$kotlin_version"
     id 'de.undercouch.download' version '4.1.2'
     id 'org.jetbrains.kotlin.plugin.serialization' version "$kotlin_version"
+    id 'org.jreleaser' version '1.19.0'
 }
 
 jacoco {
@@ -52,7 +54,6 @@ group 'org.web3j'
 
 repositories {
     mavenCentral()
-    jcenter()
 }
 
 dependencies {
