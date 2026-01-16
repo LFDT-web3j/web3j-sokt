@@ -59,7 +59,7 @@ jobs:
         uses: convictional/trigger-workflow-and-wait@v1.3.0
         with:
           owner: LFDT-web3j
-          repo: web3j
+          repo: web3j-sokt
           github_token: ${{ secrets.JRELEASER_GITHUB_TOKEN }}
           workflow_file_name: build.yml
           wait_interval: 10
