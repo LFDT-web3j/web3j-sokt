@@ -15,6 +15,7 @@ package org.web3j.sokt
 import com.github.zafarkhaja.semver.Version
 import org.apache.commons.lang3.SystemUtils
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.Test
 
 class VersionResolverTest {
@@ -213,6 +214,27 @@ class VersionResolverTest {
         } else if (SystemUtils.IS_OS_LINUX) {
             verifyVersions(correctLinuxVersions, releases)
         }
+    }
+
+    @Test
+    fun linuxArm64SolidityVersionFromConstraintsIsResolved() {
+        assumeTrue(SystemUtils.IS_OS_LINUX)
+        assumeTrue(System.getProperty("os.arch").lowercase() in setOf("aarch64", "arm64"))
+
+        val releases = listOf(
+            SolcRelease(
+                version = "0.8.30",
+                linuxUrl = "https://example.com/solc-linux-amd64-v0.8.30",
+            ),
+            SolcRelease(
+                version = "0.8.31",
+                linuxUrl = "https://example.com/solc-linux-amd64-v0.8.31",
+                linuxArm64Url = "https://example.com/solc-linux-arm64-v0.8.31",
+            ),
+        )
+
+        assertEquals("0.8.31", resolver.getCompatibleVersions("^0.8.0", releases).lastOrNull()?.version)
+        assertEquals(null, resolver.getCompatibleVersions("0.8.30", releases).lastOrNull())
     }
 
     private fun verifyVersions(versions: List<String>, releases: List<SolcRelease>) {

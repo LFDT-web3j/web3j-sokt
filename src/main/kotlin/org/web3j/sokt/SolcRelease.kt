@@ -21,9 +21,31 @@ data class SolcRelease(
     val version: String,
     @SerialName("windows_url") val windowsUrl: String = "",
     @SerialName("linux_url") val linuxUrl: String = "",
+    @SerialName("linux_arm64_url") val linuxArm64Url: String = "",
     @SerialName("mac_url") val macUrl: String = "",
 ) {
     fun isCompatibleWithOs(): Boolean {
-        return windowsUrl.isNotBlank() && SystemUtils.IS_OS_WINDOWS || linuxUrl.isNotBlank() && SystemUtils.IS_OS_LINUX || macUrl.isNotBlank() && SystemUtils.IS_OS_MAC
+        return when {
+            SystemUtils.IS_OS_WINDOWS -> windowsUrl.isNotBlank()
+            SystemUtils.IS_OS_MAC -> macUrl.isNotBlank()
+            SystemUtils.IS_OS_LINUX && isArm64() -> linuxArm64Url.isNotBlank()
+            SystemUtils.IS_OS_LINUX -> linuxUrl.isNotBlank()
+            else -> false
+        }
+    }
+
+    fun unixDownloadUrl(): String {
+        return when {
+            SystemUtils.IS_OS_MAC -> macUrl
+            SystemUtils.IS_OS_LINUX && isArm64() -> linuxArm64Url
+            SystemUtils.IS_OS_LINUX -> linuxUrl
+            else -> ""
+        }
+    }
+
+    private fun isArm64(): Boolean {
+        return System.getProperty("os.arch")
+            .lowercase()
+            .let { it == "aarch64" || it == "arm64" }
     }
 }

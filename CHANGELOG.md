@@ -10,7 +10,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 ### Features
 
-* NIL
+* Added support for downloading and using Linux ARM64 Solidity compiler binaries, enabling compatibility with ARM64 environments
 
 ### BREAKING CHANGES
 

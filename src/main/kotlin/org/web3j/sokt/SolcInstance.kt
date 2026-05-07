@@ -14,6 +14,7 @@ package org.web3j.sokt
 
 import org.apache.commons.lang3.SystemUtils
 import java.io.File
+import java.net.URI
 import java.net.URL
 import java.nio.file.Paths
 import java.util.concurrent.TimeUnit
@@ -68,8 +69,8 @@ class SolcInstance(
             }
             SystemUtils.IS_OS_LINUX || SystemUtils.IS_OS_MAC -> {
                 solcFile.parentFile.mkdirs()
-                val downloadUrl = if (SystemUtils.IS_OS_MAC) solcRelease.macUrl else solcRelease.linuxUrl
-                solcFile.writeBytes(URL(downloadUrl).readBytes())
+                solcFile.writeBytes(URI(solcRelease.unixDownloadUrl()).toURL().readBytes())
+
                 if (installed()) {
                     solcFile.setExecutable(true)
                     return true
