@@ -14,7 +14,9 @@ package org.web3j.sokt
 
 import com.github.zafarkhaja.semver.Version
 import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import org.apache.commons.lang3.SystemUtils
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.URL
@@ -22,7 +24,46 @@ import java.nio.file.Paths
 import java.util.concurrent.TimeUnit
 import javax.net.ssl.HttpsURLConnection
 
+internal enum class SolcPlatform(val directoryName: String) {
+    WINDOWS_AMD64("windows-amd64"),
+    LINUX_AMD64("linux-amd64"),
+    LINUX_ARM64("linux-arm64"),
+    MACOSX_AMD64("macosx-amd64"),
+    ;
+
+    val indexUrl: String = "https://binaries.soliditylang.org/$directoryName/list.json"
+
+    fun binaryUrl(path: String): String = "https://binaries.soliditylang.org/$directoryName/$path"
+
+    companion object {
+        fun current(): SolcPlatform? {
+            val architecture = System.getProperty("os.arch").lowercase()
+            return when {
+                SystemUtils.IS_OS_WINDOWS -> WINDOWS_AMD64
+                SystemUtils.IS_OS_MAC -> MACOSX_AMD64
+                SystemUtils.IS_OS_LINUX && architecture in setOf("aarch64", "arm64") -> LINUX_ARM64
+                SystemUtils.IS_OS_LINUX -> LINUX_AMD64
+                else -> null
+            }
+        }
+    }
+}
+
+@Serializable
+private data class SolcBuildIndex(
+    val builds: List<SolcBuild>,
+    val releases: Map<String, String> = emptyMap(),
+)
+
+@Serializable
+private data class SolcBuild(
+    val path: String,
+    val version: String,
+    val prerelease: String? = null,
+)
+
 class VersionResolver(private val directoryPath: String = ".web3j") {
+    private val json = Json { ignoreUnknownKeys = true }
 
     operator fun get(uri: String): String {
         val con = URL(uri).openConnection() as HttpsURLConnection
@@ -45,18 +86,20 @@ class VersionResolver(private val directoryPath: String = ".web3j") {
     }
 
     fun getSolcReleases(): List<SolcRelease> {
-        val versionsFile = Paths.get(System.getProperty("user.home"), directoryPath, "solc", "releases.json").toFile()
-        try {
-            val result = get("https://raw.githubusercontent.com/LFDT-web3j/web3j-sokt/main/src/main/resources/releases.json")
+        val platform = SolcPlatform.current() ?: return bundledSolcReleases()
+        val versionsFile = Paths.get(System.getProperty("user.home"), directoryPath, "solc", "${platform.directoryName}-list.json").toFile()
+        return runCatching {
+            val result = get(platform.indexUrl)
             versionsFile.parentFile.mkdirs()
             versionsFile.writeText(result)
-            return Json.decodeFromString<List<SolcRelease>>(result)
-        } catch (e: Exception) {
-            return if (versionsFile.exists()) {
-                Json.decodeFromString<List<SolcRelease>>(versionsFile.readText())
+            solcReleasesFromOfficialIndex(result, platform)
+        }.getOrElse {
+            if (versionsFile.exists()) {
+                runCatching { solcReleasesFromOfficialIndex(versionsFile.readText(), platform) }.getOrElse {
+                    bundledSolcReleases()
+                }
             } else {
-                val defaultReleases = ClassLoader.getSystemResource("releases.json").readText()
-                Json.decodeFromString<List<SolcRelease>>(defaultReleases)
+                bundledSolcReleases()
             }
         }
     }
@@ -81,7 +124,32 @@ class VersionResolver(private val directoryPath: String = ".web3j") {
         return if (pragmaRequirement != null) {
             getCompatibleVersions(pragmaRequirement, solcReleases).lastOrNull()
         } else {
-            solcReleases.last()
+            solcReleases.lastOrNull { it.isCompatibleWithOs() }
+        }
+    }
+
+    internal fun solcReleasesFromOfficialIndex(input: String, platform: SolcPlatform): List<SolcRelease> {
+        val buildIndex = json.decodeFromString<SolcBuildIndex>(input)
+        val stableReleases = if (buildIndex.releases.isNotEmpty()) {
+            buildIndex.releases.entries.map { (version, path) -> platform.toSolcRelease(version, path) }
+        } else {
+            buildIndex.builds.filter { it.prerelease == null }.map { platform.toSolcRelease(it.version, it.path) }
+        }
+
+        return stableReleases.sortedBy { Version.valueOf(it.version) }
+    }
+
+    private fun bundledSolcReleases(): List<SolcRelease> {
+        val defaultReleases = ClassLoader.getSystemResource("releases.json").readText()
+        return json.decodeFromString<List<SolcRelease>>(defaultReleases)
+    }
+
+    private fun SolcPlatform.toSolcRelease(version: String, path: String): SolcRelease {
+        val binaryUrl = binaryUrl(path)
+        return when (this) {
+            SolcPlatform.WINDOWS_AMD64 -> SolcRelease(version = version, windowsUrl = binaryUrl)
+            SolcPlatform.LINUX_AMD64, SolcPlatform.LINUX_ARM64 -> SolcRelease(version = version, linuxUrl = binaryUrl)
+            SolcPlatform.MACOSX_AMD64 -> SolcRelease(version = version, macUrl = binaryUrl)
         }
     }
 }

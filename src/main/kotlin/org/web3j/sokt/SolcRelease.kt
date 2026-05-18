@@ -23,7 +23,20 @@ data class SolcRelease(
     @SerialName("linux_url") val linuxUrl: String = "",
     @SerialName("mac_url") val macUrl: String = "",
 ) {
+    fun downloadUrl(): String {
+        return when {
+            SystemUtils.IS_OS_WINDOWS -> windowsUrl
+            SystemUtils.IS_OS_LINUX -> linuxUrl
+            SystemUtils.IS_OS_MAC -> macUrl
+            else -> ""
+        }
+    }
+
+    fun isWindowsArchive(): Boolean {
+        return SystemUtils.IS_OS_WINDOWS && downloadUrl().lowercase().endsWith(".zip")
+    }
+
     fun isCompatibleWithOs(): Boolean {
-        return windowsUrl.isNotBlank() && SystemUtils.IS_OS_WINDOWS || linuxUrl.isNotBlank() && SystemUtils.IS_OS_LINUX || macUrl.isNotBlank() && SystemUtils.IS_OS_MAC
+        return downloadUrl().isNotBlank()
     }
 }

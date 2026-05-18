@@ -12,7 +12,6 @@
  */
 package org.web3j.sokt
 
-import com.github.zafarkhaja.semver.Version
 import org.apache.commons.lang3.SystemUtils
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -106,94 +105,6 @@ class VersionResolverTest {
             ~0.4.24, >=0.5
         """.trimIndent().split("\n")
 
-    private val correctWindowsVersions =
-        """
-            0.5.13
-            0.5.14
-            0.4.25
-            0.5.14
-            0.5.14
-            0.5.14
-            0.5.14
-            0.4.25
-            0.4.25
-            null
-            0.4.25
-            null
-            null
-            0.4.25
-            0.5.14
-            null
-            null
-            0.5.14
-            0.5.14
-            null
-            0.4.25
-            0.4.25
-            0.4.25
-            0.5.14
-            null
-            0.4.25
-            0.5.14
-            0.5.14
-            null
-            0.5.14
-            0.5.14
-            0.5.14
-            0.5.14
-            null
-            0.5.14
-            0.5.14
-            0.5.14
-            0.5.14
-            0.4.25
-            null
-        """.trimIndent().split("\n")
-
-    private val correctLinuxVersions =
-        """
-            0.5.13
-            0.5.14
-            0.4.26
-            0.5.14
-            0.5.14
-            0.5.14
-            0.5.14
-            0.4.26
-            0.4.26
-            null
-            0.4.26
-            null
-            null
-            0.4.26
-            0.5.14
-            null
-            null
-            0.5.14
-            0.5.14
-            null
-            0.4.26
-            0.4.26
-            0.4.26
-            0.5.14
-            null
-            0.4.26
-            0.5.14
-            0.5.14
-            null
-            0.5.14
-            0.5.14
-            0.5.14
-            0.5.14
-            null
-            0.5.14
-            0.5.14
-            0.5.14
-            0.5.14
-            0.4.26
-            null
-        """.trimIndent().split("\n")
-
     private val resolver = VersionResolver()
 
     @Test
@@ -204,26 +115,69 @@ class VersionResolverTest {
     }
 
     @Test
-    fun correctSolidityVersionFromConstraintsIsResolved() {
-        // Filter is needed as test was written at 0.5.14 and new releases since this version will cause resolved version to be different from expected
-        val releases = resolver.getSolcReleases().filter { Version.valueOf(it.version).lessThan(Version.valueOf("0.5.15")) }
-        // Mac will not be able to do this as we don't have solc builds for every solc version tested here
-        if (SystemUtils.IS_OS_WINDOWS) {
-            verifyVersions(correctWindowsVersions, releases)
-        } else if (SystemUtils.IS_OS_LINUX) {
-            verifyVersions(correctLinuxVersions, releases)
-        }
+    fun officialSolcIndexIsConvertedToStableReleases() {
+        val releases = resolver.solcReleasesFromOfficialIndex(
+            """
+            {
+              "builds": [
+                {
+                  "path": "solc-linux-amd64-v0.8.35-pre.1+commit.a99b6d8c",
+                  "version": "0.8.35",
+                  "prerelease": "pre.1"
+                },
+                {
+                  "path": "solc-linux-amd64-v0.8.34+commit.80d5c536",
+                  "version": "0.8.34"
+                },
+                {
+                  "path": "solc-linux-amd64-v0.8.35+commit.47b9dedd",
+                  "version": "0.8.35"
+                }
+              ],
+              "releases": {
+                "0.8.35": "solc-linux-amd64-v0.8.35+commit.47b9dedd",
+                "0.8.34": "solc-linux-amd64-v0.8.34+commit.80d5c536"
+              },
+              "latestRelease": "0.8.35"
+            }
+            """.trimIndent(),
+            SolcPlatform.LINUX_AMD64,
+        )
+
+        assertEquals(listOf("0.8.34", "0.8.35"), releases.map { it.version })
+        assertEquals(
+            "https://binaries.soliditylang.org/linux-amd64/solc-linux-amd64-v0.8.35+commit.47b9dedd",
+            releases.last().linuxUrl,
+        )
     }
 
-    private fun verifyVersions(versions: List<String>, releases: List<SolcRelease>) {
-        unsanitizedStrings.forEachIndexed(fun(index: Int, s: String) {
-            val correctVersion = versions[index]
-            val resolvedVersion = resolver.getCompatibleVersions(s, releases).lastOrNull()
-            if (resolvedVersion == null) {
-                assertEquals(correctVersion, "null")
-            } else {
-                assertEquals(correctVersion, resolvedVersion.version)
-            }
-        })
+    @Test
+    fun compatibleVersionsAreResolvedFromStableReleaseSet() {
+        val releases =
+            listOf("0.4.0", "0.4.2", "0.4.21", "0.4.23", "0.4.25", "0.4.26", "0.5.0", "0.5.13", "0.5.14")
+                .map(::releaseForCurrentOs)
+
+        verifyVersion(">=0.5.10<0.5.14;", "0.5.13", releases)
+        verifyVersion("^0.4.2;", "0.4.26", releases)
+        verifyVersion(">0.4.23 <0.5.0;", "0.4.26", releases)
+        verifyVersion("0.4.2;", "0.4.2", releases)
+        verifyVersion("0.4.0;", "0.4.0", releases)
+        verifyVersion(">=0.4.0 <0.4.8;", "0.4.2", releases)
+        verifyVersion("~0.4.24;", "0.4.26", releases)
+        verifyVersion("~0.4.24 >=0.5;", null, releases)
+    }
+
+    private fun verifyVersion(pragma: String, expectedVersion: String?, releases: List<SolcRelease>) {
+        assertEquals(expectedVersion, resolver.getCompatibleVersions(pragma, releases).lastOrNull()?.version)
+    }
+
+    private fun releaseForCurrentOs(version: String): SolcRelease {
+        val url = "https://example.invalid/$version/solc"
+        return when {
+            SystemUtils.IS_OS_WINDOWS -> SolcRelease(version = version, windowsUrl = "$url.exe")
+            SystemUtils.IS_OS_LINUX -> SolcRelease(version = version, linuxUrl = url)
+            SystemUtils.IS_OS_MAC -> SolcRelease(version = version, macUrl = url)
+            else -> SolcRelease(version = version)
+        }
     }
 }

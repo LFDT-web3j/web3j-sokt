@@ -40,18 +40,22 @@ class SolcInstance(
 
     fun install(): Boolean {
         println("Solidity version ${solcRelease.version} is not installed. Downloading and installing it to ~/$directoryPath/solc/${solcRelease.version}")
+        val downloadUrl = solcRelease.downloadUrl()
+        if (downloadUrl.isBlank()) {
+            return false
+        }
         when {
             SystemUtils.IS_OS_WINDOWS -> {
                 solcFile.parentFile.mkdirs()
 
-                if (solcRelease.version.compareTo("0.7.1") > 0) {
-                    solcFile.writeBytes(URL(solcRelease.windowsUrl).readBytes())
+                if (!solcRelease.isWindowsArchive()) {
+                    solcFile.writeBytes(URL(downloadUrl).readBytes())
                     if (installed()) {
                         solcFile.setExecutable(true)
                     }
                 } else {
                     val winDownloadFile = File("${solcFile.absolutePath.dropLast(4)}.zip")
-                    winDownloadFile.writeBytes(URL(solcRelease.windowsUrl).readBytes())
+                    winDownloadFile.writeBytes(URL(downloadUrl).readBytes())
                     ZipFile(winDownloadFile).use { zip ->
                         zip.entries().asSequence().forEach { entry ->
                             zip.getInputStream(entry).use { input ->
@@ -64,11 +68,10 @@ class SolcInstance(
                     }
                     winDownloadFile.delete()
                 }
-                return true
+                return installed()
             }
             SystemUtils.IS_OS_LINUX || SystemUtils.IS_OS_MAC -> {
                 solcFile.parentFile.mkdirs()
-                val downloadUrl = if (SystemUtils.IS_OS_MAC) solcRelease.macUrl else solcRelease.linuxUrl
                 solcFile.writeBytes(URL(downloadUrl).readBytes())
                 if (installed()) {
                     solcFile.setExecutable(true)
