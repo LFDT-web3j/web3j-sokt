@@ -47,7 +47,7 @@ class VersionResolver(private val directoryPath: String = ".web3j") {
     fun getSolcReleases(): List<SolcRelease> {
         val versionsFile = Paths.get(System.getProperty("user.home"), directoryPath, "solc", "releases.json").toFile()
         try {
-            val result = get("https://raw.githubusercontent.com/LFDT-web3j/web3j-sokt/main/src/main/resources/releases.json")
+            val result = get("https://raw.githubusercontent.com/LFDT-web3j/web3j-sokt/refs/heads/release/0.6.0/src/main/resources/releases.json")
             versionsFile.parentFile.mkdirs()
             versionsFile.writeText(result)
             return Json.decodeFromString<List<SolcRelease>>(result)
