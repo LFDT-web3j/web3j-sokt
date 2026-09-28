@@ -6,7 +6,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 ### Bug Fixes
 
-* NIL
+* Remove legacy unstable oss.sonatype.org repositories to prevent 504 gateway timeouts during dependency resolution [#49](https://github.com/LFDT-web3j/web3j-sokt/pull/49)
 
 ### Features
 
