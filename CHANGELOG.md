@@ -2,7 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
-# [0.7.1]() (Upcoming)
+# [0.8.1]()  (Upcoming)
+
+### Bug Fixes
+
+* Remove legacy unstable oss.sonatype.org repositories to prevent 504 gateway timeouts during dependency resolution [#49](https://github.com/LFDT-web3j/web3j-sokt/pull/49)
+
+### Features
+
+* NIL
+*
+### BREAKING CHANGES
+
+* NIL
+
+# [0.8.0](https://github.com/LFDT-web3j/web3j-sokt/releases/tag/v0.8.0)  (2026-09-29)
 
 ### Bug Fixes
 
