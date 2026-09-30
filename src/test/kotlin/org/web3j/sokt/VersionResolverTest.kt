@@ -15,6 +15,7 @@ package org.web3j.sokt
 import kotlinx.serialization.json.Json
 import org.apache.commons.lang3.SystemUtils
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -171,15 +172,51 @@ class VersionResolverTest {
     }
 
     @Test
-    fun bundledReleasesFallbackIsReachableViaTheClassClassloader() {
-        val stream = VersionResolver::class.java.getResourceAsStream("/releases.json")
-        assertNotNull(stream, "releases.json must be loadable via the sokt class loader")
+    fun bundledReleasesV2FallbackIsReachableViaTheClassClassloader() {
+        val stream = VersionResolver::class.java.getResourceAsStream("/releases-v2.json")
+        assertNotNull(stream, "releases-v2.json must be loadable via the sokt class loader")
 
         val releases = Json { ignoreUnknownKeys = true }.decodeFromString<List<SolcRelease>>(
             stream!!.bufferedReader().use { it.readText() },
         )
         assertTrue(releases.isNotEmpty())
         assertTrue(releases.all { it.version.isNotBlank() })
+    }
+
+    @Test
+    fun releasesJsonRemainsBackwardCompatibleWithoutUnknownKeys() {
+        val stream = VersionResolver::class.java.getResourceAsStream("/releases.json")
+        assertNotNull(stream, "releases.json must be loadable via the sokt class loader")
+
+        val content = stream!!.bufferedReader().use { it.readText() }
+
+        // Parse with strict mode (ignoreUnknownKeys = false) to prove backward compatibility.
+        // Old released versions of web3j-sokt use strict deserialization, so this file must
+        // never contain keys outside the original SolcRelease schema.
+        val strictJson = Json { ignoreUnknownKeys = false }
+        val releases = strictJson.decodeFromString<List<SolcRelease>>(content)
+        assertTrue(releases.isNotEmpty())
+        assertTrue(releases.all { it.version.isNotBlank() })
+
+        // Verify no linux_arm64_url key is present in the raw JSON text
+        assertFalse(content.contains("linux_arm64_url"), "releases.json must not contain linux_arm64_url for backward compatibility")
+    }
+
+    @Test
+    fun releasesV2JsonContainsLinuxArm64UrlsForRecentVersions() {
+        val stream = VersionResolver::class.java.getResourceAsStream("/releases-v2.json")
+        assertNotNull(stream, "releases-v2.json must be loadable via the sokt class loader")
+
+        val content = stream!!.bufferedReader().use { it.readText() }
+        assertTrue(content.contains("linux_arm64_url"), "releases-v2.json should contain linux_arm64_url entries")
+
+        // Parse with ignoreUnknownKeys since releases-v2.json has extra fields
+        val releases = Json { ignoreUnknownKeys = true }.decodeFromString<List<SolcRelease>>(content)
+        assertTrue(releases.isNotEmpty())
+
+        // Verify that recent versions (0.8.31+) exist
+        val recentVersions = releases.filter { it.version.startsWith("0.8.3") && it.version >= "0.8.31" }
+        assertTrue(recentVersions.isNotEmpty(), "releases-v2.json should contain versions 0.8.31+")
     }
 
     private fun verifyVersion(pragma: String, expectedVersion: String?, releases: List<SolcRelease>) {
