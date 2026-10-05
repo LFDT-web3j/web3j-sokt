@@ -140,9 +140,9 @@ class VersionResolver(private val directoryPath: String = ".web3j") {
     }
 
     private fun bundledSolcReleases(): List<SolcRelease> {
-        val bundled = VersionResolver::class.java.getResourceAsStream("/releases.json")
+        val bundled = VersionResolver::class.java.getResourceAsStream("/releases-v2.json")
             ?: throw IllegalStateException(
-                "Unable to load the bundled releases.json fallback from the classpath",
+                "Unable to load the bundled releases-v2.json fallback from the classpath",
             )
         val defaultReleases = bundled.bufferedReader().use { it.readText() }
         return json.decodeFromString<List<SolcRelease>>(defaultReleases)

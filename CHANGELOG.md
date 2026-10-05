@@ -7,6 +7,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 ### Bug Fixes
 
 * Remove legacy unstable oss.sonatype.org repositories to prevent 504 gateway timeouts during dependency resolution [#49](https://github.com/LFDT-web3j/web3j-sokt/pull/49)
+* Restore backward compatibility by moving `linux_arm64_url` to `releases-v2.json`, which the library now uses internally. [#52](https://github.com/LFDT-web3j/web3j-sokt/pull/52)
 
 ### Features
 
