@@ -2,7 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
-# [0.8.1]()  (Upcoming)
+# [0.8.2]()  (Upcoming)
+
+### Bug Fixes
+
+* NIL
+### Features
+
+* NIL
+
+### BREAKING CHANGES
+
+* NIL
+
+# [0.8.1](https://github.com/LFDT-web3j/web3j-sokt/releases/tag/v0.8.1)  (2026-10-05)
 
 ### Bug Fixes
 
